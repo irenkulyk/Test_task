@@ -332,10 +332,18 @@
   </div>
 
   <div class="runbar">
-    <label for="api-key">Anthropic API key:</label>
+    <label for="provider">Модель:</label>
+    <select id="provider">
+      <option value="anthropic">Claude (Anthropic) — платний, потрібен баланс</option>
+      <option value="gemini">Gemini (Google) — безкоштовний рівень, без картки</option>
+    </select>
+    <label for="api-key" id="api-key-label">API key:</label>
     <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off" />
     <button class="primary" id="run-btn" disabled>Звірити доставку</button>
     <span class="status-line" id="status-line"></span>
+  </div>
+  <div class="convention" id="provider-hint" style="margin:-14px 0 20px;">
+    Отримати безкоштовний ключ Gemini: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> — без картки, генерується миттєво.
   </div>
 
   <div id="results-zone">

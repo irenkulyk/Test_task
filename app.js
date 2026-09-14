@@ -6,11 +6,20 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-// ---- pricing assumption (VERIFY against https://docs.claude.com/en/docs/about-claude/pricing before quoting externally) ----
+// ---- pricing assumptions (VERIFY against each provider's live pricing page before quoting externally) ----
 const PRICING = {
-  model: "claude-sonnet-4-6",
-  inputPerMTok: 3.0,   // USD per 1M input tokens — placeholder, confirm current rate
-  outputPerMTok: 15.0, // USD per 1M output tokens — placeholder, confirm current rate
+  anthropic: {
+    model: "claude-sonnet-4-6",
+    inputPerMTok: 3.0,   // USD per 1M input tokens — placeholder, confirm current rate
+    outputPerMTok: 15.0, // USD per 1M output tokens — placeholder, confirm current rate
+    keyPlaceholder: "sk-ant-...",
+  },
+  gemini: {
+    model: "gemini-2.0-flash",
+    inputPerMTok: 0.10,  // USD per 1M input tokens on the paid tier — the free tier is $0 within quota
+    outputPerMTok: 0.40, // USD per 1M output tokens on the paid tier
+    keyPlaceholder: "AIzaSy...",
+  },
 };
 
 const state = {
@@ -29,6 +38,8 @@ const els = {
   imgDrop: document.getElementById("img-drop"),
   imgInput: document.getElementById("img-input"),
   imgThumbs: document.getElementById("img-thumbs"),
+  provider: document.getElementById("provider"),
+  apiKeyLabel: document.getElementById("api-key-label"),
   apiKey: document.getElementById("api-key"),
   runBtn: document.getElementById("run-btn"),
   statusLine: document.getElementById("status-line"),
@@ -114,6 +125,14 @@ els.pdfInput.addEventListener("change", (e) => { if (e.target.files[0]) handlePd
 els.imgInput.addEventListener("change", (e) => handleImgFiles(e.target.files));
 els.apiKey.addEventListener("input", updateRunEnabled);
 
+function syncProviderUI() {
+  const p = els.provider.value;
+  els.apiKeyLabel.textContent = p === "gemini" ? "Gemini API key:" : "Anthropic API key:";
+  els.apiKey.placeholder = PRICING[p].keyPlaceholder;
+}
+els.provider.addEventListener("change", syncProviderUI);
+syncProviderUI();
+
 // ---------- Claude call ----------
 const SYSTEM_PROMPT = `Ти проводиш аудит доставки: звіряєш фотографії розпакованого товару з пакувальним листом, витягнутим із PDF.
 Відповідай ЛИШЕ строгим JSON без жодного маркдауну, пояснень чи прелюдії, за такою схемою:
@@ -143,53 +162,109 @@ const SYSTEM_PROMPT = `Ти проводиш аудит доставки: зві
 - Товари, яких немає в списку, але видно на фото — у extra_items.
 - Будь консервативним: не вигадуй, чого не бачиш.`;
 
+function buildUserText() {
+  return {
+    intro: `Текст пакувального листа (витягнутий з PDF "${state.pdfName}"):\n\n${state.pdfText}`,
+    outro: `Фото надані вище в порядку photo_index 0..${state.images.length - 1}. Поверни лише JSON за схемою з системного промпту.`,
+  };
+}
+
+async function callAnthropic(apiKey) {
+  const { intro, outro } = buildUserText();
+  const userContent = [
+    { type: "text", text: intro },
+    ...state.images.map((img) => ({
+      type: "image",
+      source: { type: "base64", media_type: img.mediaType, data: img.base64 },
+    })),
+    { type: "text", text: outro },
+  ];
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: PRICING.anthropic.model,
+      max_tokens: 3000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userContent }],
+    }),
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    throw new Error(`API ${resp.status}: ${errBody.slice(0, 300)}`);
+  }
+
+  const data = await resp.json();
+  const textBlock = (data.content || []).find((b) => b.type === "text");
+  if (!textBlock) throw new Error("Відповідь не містить текстового блоку з JSON.");
+
+  const usage = data.usage || {};
+  return {
+    rawText: textBlock.text,
+    usage: { input_tokens: usage.input_tokens || 0, output_tokens: usage.output_tokens || 0 },
+  };
+}
+
+async function callGemini(apiKey) {
+  const { intro, outro } = buildUserText();
+  const parts = [
+    { text: intro },
+    ...state.images.map((img) => ({
+      inline_data: { mime_type: img.mediaType, data: img.base64 },
+    })),
+    { text: outro },
+  ];
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${PRICING.gemini.model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts }],
+      generationConfig: { response_mime_type: "application/json" },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    throw new Error(`API ${resp.status}: ${errBody.slice(0, 300)}`);
+  }
+
+  const data = await resp.json();
+  const candidate = (data.candidates || [])[0];
+  const text = candidate?.content?.parts?.map((p) => p.text || "").join("") || "";
+  if (!text) throw new Error("Відповідь не містить тексту з JSON. Можливо, спрацював safety-фільтр.");
+
+  const usage = data.usageMetadata || {};
+  return {
+    rawText: text,
+    usage: { input_tokens: usage.promptTokenCount || 0, output_tokens: usage.candidatesTokenCount || 0 },
+  };
+}
+
 async function runAudit() {
   const apiKey = els.apiKey.value.trim();
+  const provider = els.provider.value;
   if (!apiKey || !state.pdfText || state.images.length === 0) return;
 
   els.runBtn.disabled = true;
   setStatus("Обробка... надсилаємо фото та накладну моделі", "active");
   els.resultsZone.innerHTML = "";
 
-  const userContent = [
-    { type: "text", text: `Текст пакувального листа (витягнутий з PDF "${state.pdfName}"):\n\n${state.pdfText}` },
-    ...state.images.map((img) => ({
-      type: "image",
-      source: { type: "base64", media_type: img.mediaType, data: img.base64 },
-    })),
-    { type: "text", text: `Фото надані вище в порядку photo_index 0..${state.images.length - 1}. Поверни лише JSON за схемою з системного промпту.` },
-  ];
-
   const start = performance.now();
   try {
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({
-        model: PRICING.model,
-        max_tokens: 3000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userContent }],
-      }),
-    });
-
+    const { rawText, usage } = provider === "gemini" ? await callGemini(apiKey) : await callAnthropic(apiKey);
     const elapsedMs = performance.now() - start;
 
-    if (!resp.ok) {
-      const errBody = await resp.text();
-      throw new Error(`API ${resp.status}: ${errBody.slice(0, 300)}`);
-    }
-
-    const data = await resp.json();
-    const textBlock = (data.content || []).find((b) => b.type === "text");
-    if (!textBlock) throw new Error("Відповідь не містить текстового блоку з JSON.");
-
-    const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
+    const cleaned = rawText.replace(/```json|```/g, "").trim();
     let parsed;
     try {
       parsed = JSON.parse(cleaned);
@@ -197,17 +272,15 @@ async function runAudit() {
       throw new Error("Не вдалося розпарсити JSON від моделі: " + e.message);
     }
 
-    const usage = data.usage || {};
-    const cost =
-      ((usage.input_tokens || 0) / 1e6) * PRICING.inputPerMTok +
-      ((usage.output_tokens || 0) / 1e6) * PRICING.outputPerMTok;
+    const rates = PRICING[provider];
+    const cost = (usage.input_tokens / 1e6) * rates.inputPerMTok + (usage.output_tokens / 1e6) * rates.outputPerMTok;
 
     state.result = parsed;
-    state.metrics = { elapsedMs, usage, cost };
+    state.metrics = { elapsedMs, usage, cost, provider };
     state.selectedRowId = null;
     state.activePhoto = 0;
 
-    setStatus(`Готово за ${(elapsedMs / 1000).toFixed(1)} с`, "");
+    setStatus(`Готово за ${(elapsedMs / 1000).toFixed(1)} с (${provider})`, "");
     renderResults();
   } catch (err) {
     console.error(err);
@@ -282,11 +355,12 @@ function renderResults() {
     : "";
 
   const m = state.metrics;
+  const costNote = m?.provider === "gemini" ? " (на безкоштовному рівні — реальні $0)" : "";
   const metricsHtml = m
     ? `<div class="metrics">
         <div class="m"><b>${(m.elapsedMs / 1000).toFixed(1)} с</b><span>час до результату</span></div>
-        <div class="m"><b>$${m.cost.toFixed(4)}</b><span>оцінка вартості цієї перевірки</span></div>
-        <div class="m"><b>${(m.usage.input_tokens || 0) + (m.usage.output_tokens || 0)}</b><span>токенів (in+out)</span></div>
+        <div class="m"><b>$${m.cost.toFixed(4)}</b><span>оцінка вартості${costNote}</span></div>
+        <div class="m"><b>${(m.usage.input_tokens || 0) + (m.usage.output_tokens || 0)}</b><span>токенів (in+out) · ${PRICING[m.provider].model}</span></div>
       </div>`
     : "";
 
