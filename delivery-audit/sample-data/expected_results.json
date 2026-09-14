@@ -1,0 +1,33 @@
+{
+  "_comment": "Record BEFORE running the app, per the brief. Fill in real photo filenames once staged and shot.",
+  "scenario": "Order #4471 — 5 line items, 8 expected units total, one deliberately corrected re-delivery variant below.",
+  "packing_list": "packing_list_order_4471.pdf",
+  "physical_staging": {
+    "BX-100 Widget Box A": "Stage exactly 2 units, labels fully visible, facing camera. Expected status: confirmed.",
+    "BX-101 Widget Box B": "Stage 1 unit, but print its label as 'Widget Box B2' (similarly named, wrong SKU/name). Expected status: mismatch.",
+    "BX-102 Widget Box C": "Stage only 2 units instead of the expected 3 (short count). Expected status: mismatch.",
+    "BX-103 Widget Box D": "Stage 1 unit but photograph it with the label partly covered by tape or a hand. Expected status: unverified.",
+    "BX-104 Widget Box E": "Stage 1 correct unit AND 1 unexpected extra unit of the same or a different labelled box not on the list. Expected: BX-104 confirmed, plus one entry in extra_items."
+  },
+  "capture_convention": "Photo 1: wide shot of the full delivery, all boxes visible from above. Photo 2: close-up of BX-101/BX-102 cluster. Photo 3: close-up of BX-103 (obscured label) and BX-104 pair. No object should be the visual subject of more than one close-up.",
+  "expected_findings": [
+    { "sku": "BX-100", "status": "confirmed" },
+    { "sku": "BX-101", "status": "mismatch", "reason": "label reads 'Widget Box B2', not 'Widget Box B'" },
+    { "sku": "BX-102", "status": "mismatch", "reason": "only 2 of 3 expected units visible" },
+    { "sku": "BX-103", "status": "unverified", "reason": "label obscured; request an unobstructed photo" },
+    { "sku": "BX-104", "status": "confirmed" }
+  ],
+  "expected_extra_items": [
+    { "description": "one extra unit not on the packing list, near BX-104" }
+  ],
+  "corrected_redelivery_variant": {
+    "description": "Second, smaller photo set showing only a replacement unit for BX-101 with the correct 'Widget Box B' label and BX-103 photographed unobstructed. Use this to test that the app can confirm a correction without re-flagging the already-resolved rows when given as a fresh audit run.",
+    "expected_findings": [
+      { "sku": "BX-101", "status": "confirmed" },
+      { "sku": "BX-103", "status": "confirmed" }
+    ]
+  },
+  "clarification_case": {
+    "description": "Take one photo where BX-103's box is fully outside the frame (not photographed at all). Expected: BX-103 stays 'unverified' with a reason asking specifically for a photo of that box — the app must not claim it is missing."
+  }
+}
