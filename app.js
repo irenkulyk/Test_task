@@ -15,9 +15,9 @@ const PRICING = {
     keyPlaceholder: "sk-ant-...",
   },
   gemini: {
-    model: "gemini-2.0-flash",
-    inputPerMTok: 0.10,  // USD per 1M input tokens on the paid tier — the free tier is $0 within quota
-    outputPerMTok: 0.40, // USD per 1M output tokens on the paid tier
+    model: "gemini-3.6-flash",
+    inputPerMTok: 1.50,  // USD per 1M input tokens (introductory rate through 2026-12-31; the free tier is $0 within quota)
+    outputPerMTok: 7.50, // USD per 1M output tokens (introductory rate through 2026-12-31)
     keyPlaceholder: "AIzaSy...",
   },
 };
