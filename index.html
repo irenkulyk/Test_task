@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Delivery Audit — звірка доставки з накладною</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
@@ -13,7 +14,9 @@
     --paper-raised:#FBFBF9;
     --ink:#171B20;
     --ink-soft:#4B525A;
+    --ink-faint:#8A9099;
     --line:#D8DAD3;
+    --line-strong:#B9BCB4;
     --ok:#2F6B4F;
     --ok-bg:#E4EEE8;
     --bad:#B23A2F;
@@ -28,336 +31,337 @@
   body{
     background:var(--paper);
     color:var(--ink);
-    font-family:'IBM Plex Mono', monospace;
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
     font-size:14px;
     line-height:1.5;
     min-height:100vh;
+    -webkit-font-smoothing:antialiased;
   }
-  .display{
-    font-family:'Fraunces', serif;
-    font-optical-sizing:auto;
-  }
-  .wrap{
-    max-width:1180px;
-    margin:0 auto;
-    padding:28px 24px 80px;
-  }
-
-  /* header */
+  .display{ font-family:'Fraunces', Georgia, serif; font-optical-sizing:auto; }
+  .wrap{ max-width:1200px; margin:0 auto; padding:28px 24px 80px; }
+  @media (max-width:680px){ .wrap{ padding:20px 16px 60px; } }
+ 
+  /* ---------- header ---------- */
   header.top{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
+    display:flex; align-items:flex-end; justify-content:space-between;
     border-bottom:2px solid var(--ink);
-    padding-bottom:18px;
-    margin-bottom:26px;
-    flex-wrap:wrap;
-    gap:10px;
+    padding-bottom:18px; margin-bottom:26px;
+    flex-wrap:wrap; gap:12px;
   }
-  header.top h1{
-    font-size:28px;
-    font-weight:600;
-    margin:0;
-    letter-spacing:-0.01em;
+  header.top h1{ font-size:30px; font-weight:600; margin:0; letter-spacing:-0.015em; }
+  header.top .sub{ color:var(--ink-soft); font-size:12.5px; max-width:460px; margin-top:6px; }
+  header.top .meta{ font-size:11.5px; color:var(--ink-faint); text-align:right; line-height:1.6; }
+  @media (max-width:680px){
+    header.top h1{ font-size:24px; }
+    header.top .meta{ text-align:left; }
   }
-  header.top .sub{
-    color:var(--ink-soft);
-    font-size:12.5px;
-    max-width:420px;
-    margin-top:4px;
-  }
-  header.top .meta{
-    font-size:12px;
-    color:var(--ink-soft);
-    text-align:right;
-  }
-
-  /* section title */
+ 
+  /* ---------- section titles ---------- */
   .section-title{
-    font-family:'Fraunces', serif;
-    font-size:15px;
-    font-weight:600;
-    margin:0 0 12px;
-    display:flex;
-    align-items:center;
-    gap:8px;
+    font-family:'Fraunces', Georgia, serif;
+    font-size:15px; font-weight:600; margin:0 0 12px;
+    display:flex; align-items:baseline; gap:8px;
   }
-  .section-title .num{
-    color:var(--ink-soft);
-    font-family:'IBM Plex Mono', monospace;
-    font-size:12px;
+  .section-title .num{ color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; font-size:12px; }
+  .section-title .aside{
+    margin-left:auto; font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; font-weight:400; color:var(--ink-faint); letter-spacing:.02em;
   }
-
-  /* intake grid */
-  .intake{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:24px;
-    margin-bottom:8px;
-  }
-  @media (max-width:760px){ .intake{grid-template-columns:1fr;} }
-
-  .card{
-    background:var(--paper-raised);
-    border:1px solid var(--line);
-    padding:18px;
-  }
-
+ 
+  /* ---------- intake ---------- */
+  .intake{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:860px){ .intake{ grid-template-columns:1fr; } }
+ 
+  .card{ background:var(--paper-raised); border:1px solid var(--line); padding:18px; }
+ 
   .dropzone{
-    border:1.5px dashed var(--line);
-    padding:22px 16px;
-    text-align:center;
-    cursor:pointer;
-    color:var(--ink-soft);
-    transition:border-color .15s ease, background .15s ease;
+    border:1.5px dashed var(--line-strong);
+    padding:24px 16px; text-align:center; cursor:pointer;
+    color:var(--ink-soft); font-size:12.5px;
+    transition:border-color .15s, background .15s, color .15s;
   }
-  .dropzone:hover, .dropzone.drag{
-    border-color:var(--stamp);
-    background:var(--stamp-bg);
-    color:var(--ink);
-  }
+  .dropzone:hover,.dropzone.drag{ border-color:var(--stamp); background:var(--stamp-bg); color:var(--ink); }
+  .dropzone.filled{ border-style:solid; border-color:var(--ok); background:var(--ok-bg); color:var(--ok); }
   .dropzone input{ display:none; }
-  .dropzone .hint{ font-size:11px; margin-top:6px; }
-
+  .dropzone .hint{ font-size:11px; margin-top:6px; color:var(--ink-faint); }
+ 
   .filelist{ margin-top:10px; font-size:12px; color:var(--ink-soft); }
-  .filelist .item{ display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--line); }
-
-  .thumbs{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
-  .thumbs img{ width:64px; height:64px; object-fit:cover; border:1px solid var(--line); }
-
-  .convention{
-    font-size:12px;
-    color:var(--ink-soft);
-    margin-top:12px;
-    padding-top:12px;
-    border-top:1px solid var(--line);
+  .filelist .item{ display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px solid var(--line); }
+  .filelist .item:last-child{ border-bottom:none; }
+ 
+  .thumbs{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .thumb{ position:relative; }
+  .thumb img{ width:72px; height:72px; object-fit:cover; border:1px solid var(--line-strong); display:block; }
+  .thumb .idx{
+    position:absolute; top:0; left:0;
+    background:var(--ink); color:var(--paper);
+    font-size:10px; padding:1px 5px; font-weight:600;
   }
+  .thumb .kill{
+    position:absolute; top:0; right:0;
+    background:var(--bad); color:#fff; border:none;
+    font-family:inherit; font-size:11px; line-height:1;
+    padding:3px 5px; cursor:pointer;
+  }
+ 
+  .convention{ font-size:11.5px; color:var(--ink-soft); margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
   .convention b{ color:var(--ink); }
-
-  /* run bar */
+ 
+  /* ---------- run bar ---------- */
   .runbar{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    margin:22px 0 30px;
-    padding:14px 16px;
-    background:var(--paper-raised);
-    border:1px solid var(--line);
+    display:flex; align-items:center; gap:12px;
+    margin:20px 0 8px; padding:14px 16px;
+    background:var(--paper-raised); border:1px solid var(--line);
     flex-wrap:wrap;
   }
+  .runbar label{ font-size:11.5px; color:var(--ink-soft); white-space:nowrap; }
   .runbar input[type=password]{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:12.5px;
-    padding:8px 10px;
-    border:1px solid var(--line);
-    background:var(--paper);
-    color:var(--ink);
-    width:280px;
+    font-family:inherit; font-size:12.5px; padding:9px 10px;
+    border:1px solid var(--line-strong); background:var(--paper); color:var(--ink);
+    flex:1 1 240px; min-width:0;
   }
-  .runbar label{ font-size:11.5px; color:var(--ink-soft); }
+  .runbar input[type=password]:focus{ outline:2px solid var(--stamp); outline-offset:-1px; }
+ 
   button.primary{
-    font-family:'IBM Plex Mono', monospace;
-    font-weight:600;
-    font-size:13px;
-    background:var(--ink);
-    color:var(--paper);
-    border:none;
-    padding:10px 20px;
-    cursor:pointer;
-    letter-spacing:.01em;
+    font-family:inherit; font-weight:600; font-size:13px;
+    background:var(--ink); color:var(--paper);
+    border:none; padding:11px 22px; cursor:pointer; letter-spacing:.01em;
+    transition:background .15s;
   }
-  button.primary:disabled{ background:var(--line); color:var(--ink-soft); cursor:not-allowed; }
+  button.primary:disabled{ background:var(--line); color:var(--ink-faint); cursor:not-allowed; }
   button.primary:hover:not(:disabled){ background:var(--stamp); }
-
-  .status-line{ font-size:12px; color:var(--ink-soft); }
+ 
+  button.ghost{
+    font-family:inherit; font-size:11px;
+    background:transparent; color:var(--ink-soft);
+    border:1px solid var(--line-strong); padding:5px 10px; cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  button.ghost:hover{ border-color:var(--stamp); color:var(--stamp); }
+ 
+  .status-line{ font-size:12px; color:var(--ink-soft); flex-basis:100%; }
   .status-line.active{ color:var(--stamp); }
   .status-line.err{ color:var(--bad); }
-
-  /* results */
-  .results{
-    display:grid;
-    grid-template-columns:1.1fr 1fr;
-    gap:24px;
+ 
+  .keynote{ font-size:11px; color:var(--ink-faint); margin:0 0 24px; }
+  .keynote a{ color:var(--stamp); }
+ 
+  /* ---------- verdict bar ---------- */
+  .verdict{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line);
+    margin-bottom:22px;
   }
-  @media (max-width:900px){ .results{grid-template-columns:1fr;} }
-
-  table.ledger{
-    width:100%;
-    border-collapse:collapse;
-    font-size:12.5px;
+  @media (max-width:680px){ .verdict{ grid-template-columns:repeat(2,1fr); } }
+  .verdict .v{ background:var(--paper-raised); padding:14px 16px; }
+  .verdict .v b{
+    display:block; font-family:'Fraunces', Georgia, serif;
+    font-size:28px; font-weight:700; line-height:1.1;
   }
+  .verdict .v span{ font-size:10.5px; color:var(--ink-soft); letter-spacing:.03em; }
+  .verdict .v.ok b{ color:var(--ok); }
+  .verdict .v.bad b{ color:var(--bad); }
+  .verdict .v.warn b{ color:var(--warn); }
+  .verdict .v.neutral b{ color:var(--ink); }
+ 
+  /* ---------- results ---------- */
+  .results{ display:grid; grid-template-columns:1.05fr 1fr; gap:26px; align-items:start; }
+  @media (max-width:980px){ .results{ grid-template-columns:1fr; } }
+ 
+  table.ledger{ width:100%; border-collapse:collapse; font-size:12.5px; }
   table.ledger th{
-    text-align:left;
-    font-weight:600;
-    font-size:10.5px;
-    letter-spacing:.03em;
-    color:var(--ink-soft);
-    border-bottom:1.5px solid var(--ink);
-    padding:6px 8px;
+    text-align:left; font-weight:600; font-size:10px; letter-spacing:.05em;
+    color:var(--ink-faint); border-bottom:1.5px solid var(--ink); padding:7px 8px;
+    text-transform:uppercase;
   }
-  table.ledger td{
-    padding:9px 8px;
-    border-bottom:1px solid var(--line);
-    vertical-align:top;
-  }
-  table.ledger tr.row{ cursor:pointer; }
+  table.ledger td{ padding:11px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.ledger tr.row{ cursor:pointer; transition:background .12s; }
   table.ledger tr.row:hover{ background:var(--stamp-bg); }
-  table.ledger tr.row.selected{ background:var(--stamp-bg); }
-  table.ledger .reason{ color:var(--ink-soft); font-size:11.5px; margin-top:2px; }
-
+  table.ledger tr.row.selected{ background:var(--stamp-bg); box-shadow:inset 3px 0 0 var(--stamp); }
+  table.ledger .name{ font-weight:500; }
+  table.ledger .reason{ color:var(--ink-soft); font-size:11.5px; margin-top:3px; line-height:1.45; }
+  table.ledger .docref{
+    color:var(--ink-faint); font-size:10.5px; margin-top:4px;
+    padding-left:7px; border-left:2px solid var(--line-strong);
+  }
+  table.ledger .askmore{ margin-top:7px; }
+ 
   .stamp{
-    display:inline-block;
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size:11px;
-    padding:2px 8px;
-    border:1.5px solid currentColor;
-    transform:rotate(-2deg);
-    white-space:nowrap;
+    display:inline-block; font-family:'Fraunces', Georgia, serif;
+    font-weight:600; font-size:10.5px; padding:2px 7px;
+    border:1.5px solid currentColor; transform:rotate(-1.5deg); white-space:nowrap;
   }
   .stamp.confirmed{ color:var(--ok); background:var(--ok-bg); }
-  .stamp.mismatch{ color:var(--bad); background:var(--bad-bg); }
+  .stamp.mismatch,.stamp.identity_mismatch,.stamp.quantity_mismatch{ color:var(--bad); background:var(--bad-bg); }
   .stamp.unverified{ color:var(--warn); background:var(--warn-bg); }
-  .stamp.identity_mismatch, .stamp.quantity_mismatch{ color:var(--bad); background:var(--bad-bg); }
-
+ 
   .extra-note{
-    margin-top:14px;
-    padding:10px 12px;
-    background:var(--warn-bg);
-    border-left:3px solid var(--warn);
-    font-size:12px;
+    margin-top:16px; padding:11px 13px;
+    background:var(--warn-bg); border-left:3px solid var(--warn); font-size:12px;
   }
-
-  .evidence-col{ position:sticky; top:20px; align-self:start; }
-  .photo-tabs{ display:flex; gap:2px; margin-bottom:10px; }
+  .extra-note b{ display:block; margin-bottom:3px; }
+ 
+  /* ---------- evidence ---------- */
+  .evidence-col{ position:sticky; top:20px; }
+  @media (max-width:980px){ .evidence-col{ position:static; } }
+ 
+  .photo-tabs{ display:flex; gap:2px; margin-bottom:0; }
   .photo-tabs button{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11.5px;
-    background:var(--paper-raised);
-    border:1px solid var(--line);
-    border-bottom:none;
-    padding:6px 12px;
-    cursor:pointer;
-    color:var(--ink-soft);
+    font-family:inherit; font-size:11.5px;
+    background:var(--paper); border:1px solid var(--line); border-bottom:none;
+    padding:7px 13px; cursor:pointer; color:var(--ink-faint);
+    transition:color .12s, background .12s;
   }
-  .photo-tabs button.active{ background:var(--paper); color:var(--ink); font-weight:600; border-bottom:2px solid var(--paper); margin-bottom:-1px; }
-
+  .photo-tabs button:hover{ color:var(--ink); }
+  .photo-tabs button.active{ background:var(--paper-raised); color:var(--ink); font-weight:600; }
+  .photo-tabs button .dot{
+    display:inline-block; width:5px; height:5px; border-radius:50%;
+    margin-left:5px; vertical-align:middle; background:var(--line-strong);
+  }
+  .photo-tabs button.has-boxes .dot{ background:var(--stamp); }
+ 
   .photo-frame{
-    position:relative;
-    border:1px solid var(--line);
-    background:#000;
-    overflow:hidden;
+    position:relative; border:1px solid var(--line); background:#1a1a1a;
+    overflow:hidden; line-height:0;
   }
   .photo-frame img{ display:block; width:100%; height:auto; }
+ 
   .bbox{
-    position:absolute;
-    border:2px solid var(--stamp);
-    background:rgba(45,65,89,0.08);
-    pointer-events:none;
+    position:absolute; border:2px solid var(--stamp);
+    background:rgba(45,65,89,.07); pointer-events:none;
+    transition:border-width .12s, background .12s, box-shadow .12s, opacity .12s;
   }
-  .bbox.confirmed{ border-color:var(--ok); }
-  .bbox.mismatch{ border-color:var(--bad); }
-  .bbox.unverified{ border-color:var(--warn); }
-  .bbox.identity_mismatch{ border-color:var(--bad); }
-  .bbox.quantity_mismatch{ border-color:var(--bad); }
+  .bbox.confirmed{ border-color:var(--ok); background:rgba(47,107,79,.07); }
+  .bbox.mismatch,.bbox.identity_mismatch,.bbox.quantity_mismatch{ border-color:var(--bad); background:rgba(178,58,47,.09); }
+  .bbox.unverified{ border-color:var(--warn); background:rgba(184,134,43,.09); border-style:dashed; }
+  .bbox.extra{ border-color:var(--bad); border-style:dotted; }
+  .bbox.dim{ opacity:.25; }
+  .bbox.hot{ border-width:3px; box-shadow:0 0 0 2px rgba(255,255,255,.55), 0 0 14px rgba(0,0,0,.35); }
   .bbox .tag{
-    position:absolute;
-    top:-20px; left:-2px;
-    font-size:10px;
-    background:var(--ink);
-    color:var(--paper);
-    padding:1px 5px;
-    white-space:nowrap;
+    position:absolute; top:-19px; left:-2px;
+    font-size:9.5px; line-height:1.5; background:var(--ink); color:var(--paper);
+    padding:1px 6px; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;
   }
-
+  .bbox.hot .tag{ background:var(--stamp); }
+ 
+  .evidence-hint{
+    font-size:11px; color:var(--ink-faint);
+    margin-top:9px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .convention-used{
+    font-size:11px; color:var(--ink-soft); margin-top:10px;
+    padding:9px 11px; background:var(--paper-raised); border:1px solid var(--line);
+  }
+  .convention-used b{ color:var(--ink); }
+ 
+  /* ---------- metrics ---------- */
   .metrics{
-    display:flex;
-    gap:24px;
-    margin-top:20px;
-    padding-top:16px;
-    border-top:2px solid var(--ink);
-    font-size:12px;
+    display:flex; gap:28px; flex-wrap:wrap;
+    margin-top:22px; padding-top:16px; border-top:2px solid var(--ink); font-size:12px;
   }
-  .metrics .m b{ display:block; font-family:'Fraunces', serif; font-size:20px; font-weight:600; }
-  .metrics .m span{ color:var(--ink-soft); font-size:11px; }
-
+  .metrics .m b{ display:block; font-family:'Fraunces', Georgia, serif; font-size:21px; font-weight:600; }
+  .metrics .m span{ color:var(--ink-faint); font-size:10.5px; }
+ 
+  /* ---------- states ---------- */
   .empty{
-    color:var(--ink-soft);
-    font-size:12.5px;
-    padding:30px 0;
-    text-align:center;
-    border:1px dashed var(--line);
+    color:var(--ink-faint); font-size:12.5px; padding:44px 20px;
+    text-align:center; border:1px dashed var(--line-strong);
   }
-
-  footer.note{
-    margin-top:50px;
-    padding-top:16px;
-    border-top:1px solid var(--line);
-    font-size:11px;
-    color:var(--ink-soft);
+  .empty b{ display:block; color:var(--ink-soft); font-size:13px; margin-bottom:6px; }
+ 
+  .errbox{
+    border:1px solid var(--bad); border-left:3px solid var(--bad);
+    background:var(--bad-bg); padding:14px 16px; font-size:12.5px; color:var(--ink);
   }
+  .errbox b{ color:var(--bad); }
+  .errbox pre{
+    margin:8px 0 0; font-family:inherit; font-size:11px; color:var(--ink-soft);
+    white-space:pre-wrap; word-break:break-word;
+  }
+ 
+  /* loading skeleton */
+  .loading .steps{ font-size:12px; color:var(--ink-soft); margin-bottom:18px; }
+  .loading .steps div{ padding:3px 0; }
+  .loading .steps .done{ color:var(--ok); }
+  .loading .steps .now{ color:var(--stamp); font-weight:600; }
+  .loading .steps .queued{ color:var(--ink-faint); }
+  .sk{ background:linear-gradient(90deg,var(--line) 25%,#E8E9E4 50%,var(--line) 75%); background-size:200% 100%; animation:sh 1.3s infinite; }
+  @keyframes sh{ 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+  .sk-row{ height:38px; margin-bottom:6px; }
+  .sk-img{ height:230px; }
+ 
+  /* ---------- print ---------- */
+  @media print{
+    body{ background:#fff; }
+    .intake,.runbar,.keynote,.photo-tabs,.evidence-hint,footer.note,button{ display:none !important; }
+    .wrap{ max-width:none; padding:0; }
+    .results{ grid-template-columns:1fr; }
+    .evidence-col{ position:static; page-break-inside:avoid; }
+    .card,.verdict .v,.convention-used{ background:#fff; }
+    table.ledger tr.row{ page-break-inside:avoid; }
+  }
+ 
+  footer.note{ margin-top:50px; padding-top:16px; border-top:1px solid var(--line); font-size:11px; color:var(--ink-faint); }
 </style>
 </head>
 <body>
 <div class="wrap">
-
+ 
   <header class="top">
     <div>
       <h1 class="display">Delivery Audit</h1>
       <div class="sub">Звірка фото розпакованої доставки з пакувальним листом. Кожен висновок посилається на рядок документа і ділянку фото.</div>
     </div>
-    <div class="meta">v0.2 · browser prototype<br/>Gemini Vision · 2 режими аналізу</div>
+    <div class="meta">v0.3 · browser prototype<br/>Gemini Vision · без бекенду</div>
   </header>
-
+ 
   <div class="intake">
     <div class="card">
-      <div class="section-title"><span class="num">01</span> Пакувальний лист (PDF)</div>
+      <div class="section-title"><span class="num">01</span> Пакувальний лист<span class="aside">PDF, 1 стор.</span></div>
       <div class="dropzone" id="pdf-drop">
         <input type="file" id="pdf-input" accept="application/pdf" />
-        Перетягніть PDF сюди або натисніть, щоб обрати
-        <div class="hint">Одна сторінка, текстовий PDF (не скан)</div>
+        <span id="pdf-drop-label">Перетягніть PDF сюди або натисніть, щоб обрати</span>
+        <div class="hint">Текстовий PDF, не скан</div>
       </div>
       <div class="filelist" id="pdf-parsed"></div>
     </div>
-
+ 
     <div class="card">
-      <div class="section-title"><span class="num">02</span> Фото доставки (до 3)</div>
+      <div class="section-title"><span class="num">02</span> Фото доставки<span class="aside" id="img-count">0 / 3</span></div>
       <div class="dropzone" id="img-drop">
-        <input type="file" id="img-input" accept="image/*" multiple />
+        <input type="file" id="img-input" accept="image/jpeg,image/png,image/webp" multiple />
         Перетягніть фото сюди або натисніть, щоб обрати
-        <div class="hint">До 3 фотографій одного замовлення</div>
+        <div class="hint">JPG, PNG або WebP · до 3 фото</div>
       </div>
       <div class="thumbs" id="img-thumbs"></div>
       <div class="convention">
-        <b>Конвенція зйомки:</b> фото 1 — загальний план усієї доставки; кожне наступне фото — окремий, некадровано-повторюваний ракурс на конкретний товар/етикетку. Не фотографуйте один і той самий предмет двічі в одному кадрі під різним кутом без потреби — модель звіряє об'єкти між фото за цим правилом.
+        <b>Конвенція зйомки:</b> фото 1 — загальний план усієї доставки. Кожне наступне — окремий предмет або етикетка, і кожен предмет є головним об'єктом щонайбільше одного крупного плану. За цим правилом модель відрізняє різні одиниці товару від одного предмета, знятого двічі.
       </div>
     </div>
   </div>
-
+ 
   <div class="runbar">
-    <label for="mode">Режим:</label>
-    <select id="mode">
-      <option value="real">Real AI — Gemini</option>
-      <option value="demo">Demo — контрольований тест</option>
-    </select>
-    <label for="api-key" id="api-key-label">Gemini API key:</label>
-    <input type="password" id="api-key" placeholder="AIzaSy..." autocomplete="off" />
+    <label for="api-key">Gemini API key</label>
+    <input type="password" id="api-key" placeholder="AIzaSy…" autocomplete="off" spellcheck="false" />
     <button class="primary" id="run-btn" disabled>Звірити доставку</button>
     <span class="status-line" id="status-line"></span>
   </div>
-  <div class="convention" id="provider-hint" style="margin:-14px 0 20px;">
-    Real AI: ключ Gemini використовується лише для поточного запуску. Для submission можна використати безкоштовну квоту Google AI Studio. Demo mode не викликає API та використовує контрольований тестовий набір.
-  </div>
-
+  <p class="keynote">
+    Ключ використовується лише у вашому браузері для цього запуску і надсилається напряму до Google AI API. У production він має зберігатися на сервері. Отримати ключ: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
+  </p>
+ 
   <div id="results-zone">
-    <div class="empty">Завантажте PDF і фото, оберіть режим і натисніть «Звірити доставку»</div>
+    <div class="empty">
+      <b>Готово до перевірки</b>
+      Завантажте пакувальний лист і фото доставки, вкажіть ключ — і застосунок звірить їх між собою.
+    </div>
   </div>
-
+ 
   <footer class="note">
-    Real AI: API key використовується лише в поточній сесії браузера та передається Google AI API. Для production ключ слід зберігати server-side. Demo mode не надсилає файли в API.
+    Кожен висновок ґрунтується лише на тому, що видно на наданих фото. Затулена етикетка або відсутній ракурс не вважаються доказом відсутності товару — такі позиції позначаються як неперевірені із зазначенням, якого саме знімка бракує.
   </footer>
 </div>
-
+ 
 <script src="app.js"></script>
 </body>
 </html>
