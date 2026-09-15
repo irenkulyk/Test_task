@@ -218,6 +218,7 @@
   .stamp.confirmed{ color:var(--ok); background:var(--ok-bg); }
   .stamp.mismatch{ color:var(--bad); background:var(--bad-bg); }
   .stamp.unverified{ color:var(--warn); background:var(--warn-bg); }
+  .stamp.identity_mismatch, .stamp.quantity_mismatch{ color:var(--bad); background:var(--bad-bg); }
 
   .extra-note{
     margin-top:14px;
@@ -257,6 +258,8 @@
   .bbox.confirmed{ border-color:var(--ok); }
   .bbox.mismatch{ border-color:var(--bad); }
   .bbox.unverified{ border-color:var(--warn); }
+  .bbox.identity_mismatch{ border-color:var(--bad); }
+  .bbox.quantity_mismatch{ border-color:var(--bad); }
   .bbox .tag{
     position:absolute;
     top:-20px; left:-2px;
@@ -303,7 +306,7 @@
       <h1 class="display">Delivery Audit</h1>
       <div class="sub">Звірка фото розпакованої доставки з пакувальним листом. Кожен висновок посилається на рядок документа і ділянку фото.</div>
     </div>
-    <div class="meta">v0.1 · client-side prototype<br/>Claude Vision · без бекенду</div>
+    <div class="meta">v0.2 · browser prototype<br/>Gemini Vision · 2 режими аналізу</div>
   </header>
 
   <div class="intake">
@@ -332,26 +335,26 @@
   </div>
 
   <div class="runbar">
-    <label for="provider">Модель:</label>
-    <select id="provider">
-      <option value="anthropic">Claude (Anthropic) — платний, потрібен баланс</option>
-      <option value="gemini">Gemini (Google) — безкоштовний рівень, без картки</option>
+    <label for="mode">Режим:</label>
+    <select id="mode">
+      <option value="real">Real AI — Gemini</option>
+      <option value="demo">Demo — контрольований тест</option>
     </select>
-    <label for="api-key" id="api-key-label">API key:</label>
-    <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off" />
+    <label for="api-key" id="api-key-label">Gemini API key:</label>
+    <input type="password" id="api-key" placeholder="AIzaSy..." autocomplete="off" />
     <button class="primary" id="run-btn" disabled>Звірити доставку</button>
     <span class="status-line" id="status-line"></span>
   </div>
   <div class="convention" id="provider-hint" style="margin:-14px 0 20px;">
-    Отримати безкоштовний ключ Gemini: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> — без картки, генерується миттєво.
+    Real AI: ключ Gemini використовується лише для поточного запуску. Для submission можна використати безкоштовну квоту Google AI Studio. Demo mode не викликає API та використовує контрольований тестовий набір.
   </div>
 
   <div id="results-zone">
-    <div class="empty">Завантажте PDF і фото, введіть ключ і натисніть «Звірити доставку»</div>
+    <div class="empty">Завантажте PDF і фото, оберіть режим і натисніть «Звірити доставку»</div>
   </div>
 
   <footer class="note">
-    Ключ API використовується лише в поточній сесії браузера і нікуди, крім api.anthropic.com, не надсилається. У продакшн-версії ключ проксувався б через бекенд.
+    Real AI: API key використовується лише в поточній сесії браузера та передається Google AI API. Для production ключ слід зберігати server-side. Demo mode не надсилає файли в API.
   </footer>
 </div>
 
